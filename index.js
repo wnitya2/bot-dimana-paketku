@@ -42,10 +42,13 @@ function verifyRequestSignature (req, res, buf) {
 }
 
 function getPacketStatus (userInput, cb) {
+  console.log('userInput: ', userInput)
+  console.log('userInput.length: ', userInput.length)
   const courrier = userInput.substring(0, 3)
-  const trackNo = userInput.substring(4, userInput.length - 1)
+  const trackNo = userInput.substring(4, userInput.length - 4)
+  console.log('userInputAfter: ', userInput)
 
-  let query = {
+  const query = {
     slug: courrier,
     tracking_number: trackNo
   }
