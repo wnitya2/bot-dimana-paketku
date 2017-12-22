@@ -43,14 +43,14 @@ function verifyRequestSignature (req, res, buf) {
 
 function getPacketStatus (userInput) {
   const courrier = userInput.substring(0, 3)
-  const trackNo = userInput.substring(3, userInput.length - 1)
+  const trackNo = userInput.substring(4, userInput.length - 1)
 
-  console.log(`courrier: ${courrier}, trackNo: ${trackNo}`)
+  console.log(`courrier: ${courrier}, trackNo: ${courrier}`)
 
   Aftership.call('GET', `/trackings/${courrier}/${trackNo}`, function (err, result) {
-    if (err || result.data.tracking === undefined) {
+    if (err) {
       console.log('err from aftership: ', err)
-      return result.meta.message
+      return err.message
     } else {
       const lastCheckpoint = result.data.tracking.checkpoints[result.data.tracking.checkpoints.length - 1]
       console.log('lastCheckpoint: ', lastCheckpoint)
