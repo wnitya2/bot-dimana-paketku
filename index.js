@@ -41,7 +41,7 @@ function verifyRequestSignature (req, res, buf) {
   }
 }
 
-function getPacketStatus (userInput) {
+function getPacketStatus (userInput, cb) {
   const courrier = userInput.substring(0, 3)
   const trackNo = userInput.substring(4, userInput.length - 1)
 
@@ -51,12 +51,12 @@ function getPacketStatus (userInput) {
     if (err) {
       console.log('err from aftership: ', err)
       console.log('err.message: ', err.message)
-      return err.message
+      return cb(err.message)
     } else {
       const lastCheckpoint = result.data.tracking.checkpoints[result.data.tracking.checkpoints.length - 1]
       console.log('lastCheckpoint: ', lastCheckpoint)
       console.log(`Tracking No: ${trackNo}\nStatus: ${lastCheckpoint.tag}\nMessage: ${lastCheckpoint.message}`)
-      return `Tracking No: ${trackNo}\nStatus: ${lastCheckpoint.tag}\nMessage: ${lastCheckpoint.message}`
+      return cb(null, `Tracking No: ${trackNo}\nStatus: ${lastCheckpoint.tag}\nMessage: ${lastCheckpoint.message}`)
     }
   })
 }
@@ -68,12 +68,26 @@ function sendTextMessage (sender, text, boolean) {
   }
   if (boolean) {
     console.log('going to getPacketStatus... with text: ', text)
-    messageData = {
-      text: getPacketStatus(text)
-    }
+    getPacketStatus(text, (err, result) => {
+      if (err) {
+        messageData = {
+          text: err
+        }
+      } else {
+        messageData = {
+          text: result
+        }
+      }
+      console.log('text to be displayed: ', messageData)
+      postToFb(url, sender, messageData)
+    })
+  } else {
+    console.log('text to be displayed: ', messageData)
+    postToFb(url, sender, messageData)
   }
+}
 
-  console.log('text to be displayed: ', messageData)
+function postToFb (url, sender, messageData) {
   request(url, function (error, response, body) {
     if (!error && response.statusCode === 200) {
       // let parseData = JSON.parse(body)
