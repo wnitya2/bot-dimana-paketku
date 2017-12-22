@@ -54,13 +54,15 @@ function getPacketStatus (userInput, cb) {
 
   Aftership.call('GET', `/trackings`, { query: query }, function (err, result) {
     if (err) {
-      console.log('err from aftership: ', err)
       console.log('err.message: ', err.message)
       return cb(err.message)
     } else {
-      const lastCheckpoint = result.data.tracking.checkpoints[result.data.tracking.checkpoints.length - 1]
-      console.log('lastCheckpoint: ', lastCheckpoint)
-      console.log(`Tracking No: ${trackNo}\nStatus: ${lastCheckpoint.tag}\nMessage: ${lastCheckpoint.message}`)
+      const checkpoints = result.data.trackings[0].checkpoints
+      console.log('checkpoints: ', checkpoints)
+
+      const lastCheckpoint = checkpoints[checkpoints.length - 1]
+      console.log('lastCheckpoint::::: ', lastCheckpoint)
+
       return cb(null, `Tracking No: ${trackNo}\nStatus: ${lastCheckpoint.tag}\nMessage: ${lastCheckpoint.message}`)
     }
   })
