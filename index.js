@@ -45,11 +45,12 @@ function getPacketStatus (userInput) {
   const courrier = userInput.substring(0, 3)
   const trackNo = userInput.substring(4, userInput.length - 1)
 
-  console.log(`courrier: ${courrier}, trackNo: ${courrier}`)
+  console.log(`courrier: ${courrier}, trackNo: ${trackNo}`)
 
   Aftership.call('GET', `/trackings/${courrier}/${trackNo}`, function (err, result) {
     if (err) {
       console.log('err from aftership: ', err)
+      console.log('err.message: ', err.message)
       return err.message
     } else {
       const lastCheckpoint = result.data.tracking.checkpoints[result.data.tracking.checkpoints.length - 1]
@@ -62,19 +63,20 @@ function getPacketStatus (userInput) {
 
 function sendTextMessage (sender, text, boolean) {
   let url = `https://graph.facebook.com/v2.6/${sender}?fields=first_name,last_name,profile_pic&access_token=${token}`
-
+  let messageData = {
+    text
+  }
   if (boolean) {
     console.log('going to getPacketStatus... with text: ', text)
-    text = getPacketStatus(text)
+    messageData = {
+      text: getPacketStatus(text)
+    }
   }
 
-  console.log('text: ', text)
+  console.log('text to be displayed: ', messageData)
   request(url, function (error, response, body) {
     if (!error && response.statusCode === 200) {
-      let parseData = JSON.parse(body)
-      let messageData = {
-        text
-      }
+      // let parseData = JSON.parse(body)
       request({
         url: 'https://graph.facebook.com/v2.10/me/messages',
         qs: {
