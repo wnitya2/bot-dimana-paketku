@@ -59,7 +59,7 @@ function getPacketStatus (userInput, cb) {
       console.log('err.message: ', err.message)
       return cb(err.message)
     } else {
-      console.log('result: ', result)
+      console.log('result.data.trackings[0]: ', result.data.trackings[0])
 
       const checkpoints = result.data.trackings[0].checkpoints
       console.log('checkpoints: ', checkpoints)
