@@ -7,7 +7,8 @@ const app = express()
 const token = 'EAAEWs25cLwoBADsVDl5a5D0SWvkdgAfupZCxSRP4VjMZBlDZCDGhkzDunPuSWmKPZA49LqkspZAtOdUNRmkho7Vy2ycEjBRLr4ZASf2zlKb3ZAYJgBbZAw7eBnZCoGtUJ6ZAJHIPcTgoc87mHZB8dTizp4CRMqt1FHH9eZCiZBijvbKYNyQZDZD'
 const crypto = require('crypto')
 const AppSecret = 'APP_YOUR_SECRET'
-const Aftership = require('aftership')(process.env.AFKUNCI)
+// const Aftership = require('aftership')(process.env.AFKUNCI)
+const Aftership = require('aftership')('26fc173a-725e-4fab-9193-4da0f160403d')
 
 app.set('port', (process.env.PORT || 5000))
 
