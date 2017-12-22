@@ -45,8 +45,7 @@ function getPacketStatus (userInput, cb) {
   console.log('userInput: ', userInput)
   console.log('userInput.length: ', userInput.length)
   const courrier = userInput.substring(0, 3)
-  const trackNo = userInput.substring(4, userInput.length - 4)
-  console.log('userInputAfter: ', userInput)
+  const trackNo = userInput.substring(4, userInput.length)
 
   const query = {
     slug: courrier,
@@ -60,6 +59,8 @@ function getPacketStatus (userInput, cb) {
       console.log('err.message: ', err.message)
       return cb(err.message)
     } else {
+      console.log('result: ', result)
+
       const checkpoints = result.data.trackings[0].checkpoints
       console.log('checkpoints: ', checkpoints)
 
@@ -73,25 +74,28 @@ function getPacketStatus (userInput, cb) {
 
 function sendTextMessage (sender, text, boolean) {
   let url = `https://graph.facebook.com/v2.6/${sender}?fields=first_name,last_name,profile_pic&access_token=${token}`
-  let messageData = {
-    text
-  }
+
   if (boolean) {
     console.log('going to getPacketStatus... with text: ', text)
     getPacketStatus(text, (err, result) => {
       if (err) {
-        messageData = {
+        const messageData = {
           text: err
         }
+        console.log('text to be displayed: ', messageData)
+        postToFb(url, sender, messageData)
       } else {
-        messageData = {
+        const messageData = {
           text: result
         }
+        console.log('text to be displayed: ', messageData)
+        postToFb(url, sender, messageData)
       }
-      console.log('text to be displayed: ', messageData)
-      postToFb(url, sender, messageData)
     })
   } else {
+    const messageData = {
+      text
+    }
     console.log('text to be displayed: ', messageData)
     postToFb(url, sender, messageData)
   }
