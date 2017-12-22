@@ -59,9 +59,9 @@ function getPacketStatus (userInput, cb) {
       console.log('err.message: ', err.message)
       return cb(err.message)
     } else {
-      console.log('result.data.trackings[0]: ', result.data.trackings[0])
+      console.log('result.data: ', result.data)
 
-      const checkpoints = result.data.trackings[0].checkpoints
+      const checkpoints = result.data.trackings.checkpoints
       console.log('checkpoints: ', checkpoints)
 
       const lastCheckpoint = checkpoints[checkpoints.length - 1]
