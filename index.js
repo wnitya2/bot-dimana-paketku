@@ -7,6 +7,7 @@ const app = express()
 const token = 'EAAEWs25cLwoBADsVDl5a5D0SWvkdgAfupZCxSRP4VjMZBlDZCDGhkzDunPuSWmKPZA49LqkspZAtOdUNRmkho7Vy2ycEjBRLr4ZASf2zlKb3ZAYJgBbZAw7eBnZCoGtUJ6ZAJHIPcTgoc87mHZB8dTizp4CRMqt1FHH9eZCiZBijvbKYNyQZDZD'
 const crypto = require('crypto')
 const AppSecret = 'APP_YOUR_SECRET'
+const Aftership = require('aftership')(process.env.AFKUNCI)
 
 app.set('port', (process.env.PORT || 5000))
 
@@ -39,16 +40,33 @@ function verifyRequestSignature (req, res, buf) {
   }
 }
 
-function sendTextMessage (sender, text) {
+function getPacketStatus (userInput) {
+  const courrier = userInput.substring(0, 3)
+  const trackNo = userInput.substring(4)
+  Aftership.call('GET', `/trackings/${courrier}/${trackNo}`, function (err, result) {
+    if (err) {
+      return err
+    } else if (result.data.tracking === undefined) {
+
+    } else {
+      const lastCheckpoint = result.data.tracking.checkpoints[result.data.tracking.checkpoints.length - 1]
+      return `Tracking No: ${trackNo}\nStatus: ${lastCheckpoint.tag}\nMessage: ${lastCheckpoint.message}`
+    }
+  })
+}
+
+function sendTextMessage (sender, text, boolean) {
   let url = `https://graph.facebook.com/v2.6/${sender}?fields=first_name,last_name,profile_pic&access_token=${token}`
+
+  if (boolean) {
+    text = getPacketStatus(text)
+  }
 
   request(url, function (error, response, body) {
     if (!error && response.statusCode === 200) {
       let parseData = JSON.parse(body)
       let messageData = {
         text
-        // text: `Hi ${parseData.first_name} ${parseData.last_name}, you send message : ${text}`
-        // text: `Hi ${parseData.first_name} ${parseData.last_name}, please enter your JNE tracking number with format 'jne_<tracking number>'`
       }
       request({
         url: 'https://graph.facebook.com/v2.10/me/messages',
@@ -86,9 +104,9 @@ app.post('/webhook/', function (req, res) {
       pageEntry.messaging.forEach(function (messagingEvent) {
         console.log(messagingEvent)
         if (checkUserInput(messagingEvent.message.text)) {
-          sendTextMessage(messagingEvent.sender.id, 'Memeriksa paket anda')
+          sendTextMessage(messagingEvent.sender.id, 'Memeriksa paket anda', true)
         } else {
-          sendTextMessage(messagingEvent.sender.id, 'Silahkan masukkan paket anda dengan format: jne_<no resi>\nContoh: jne_1234567890')
+          sendTextMessage(messagingEvent.sender.id, 'Silahkan masukkan paket anda dengan format: jne_<no resi>\nContoh: jne_1234567890', false)
         }
       })
     })
