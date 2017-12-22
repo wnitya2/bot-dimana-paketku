@@ -18,7 +18,7 @@ app.use(bodyParser.json())
 
 // Index route
 app.get('/', function (req, res) {
-  res.send('Hello world, I am a chat bot..')
+  res.send('Dimana Paketku Facebook bot. Check it out here https://www.facebook.com/Dimana-Paketku-833111273538199/')
 })
 
 function verifyRequestSignature (req, res, buf) {
