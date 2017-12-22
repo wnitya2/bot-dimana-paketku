@@ -52,7 +52,7 @@ function getPacketStatus (userInput, cb) {
 
   console.log(`courrier: ${courrier}, trackNo: ${trackNo}`)
 
-  Aftership.call('GET', `/trackings`, { query: query }, function (err, result) {
+  Aftership.call('GET', `/trackings`, { query }, function (err, result) {
     if (err) {
       console.log('err.message: ', err.message)
       return cb(err.message)
