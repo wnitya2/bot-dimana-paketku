@@ -45,7 +45,7 @@ function getPacketStatus (userInput) {
   const courrier = userInput.substring(0, 3)
   const trackNo = userInput.substring(3, userInput.length - 1)
 
-  console.log(`courrier: ${courrier}, trackNo: ${courrier}`)
+  console.log(`courrier: ${courrier}, trackNo: ${trackNo}`)
 
   Aftership.call('GET', `/trackings/${courrier}/${trackNo}`, function (err, result) {
     if (err || result.data.tracking === undefined) {
