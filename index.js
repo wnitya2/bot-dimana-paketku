@@ -88,7 +88,7 @@ app.post('/webhook/', function (req, res) {
         if (checkUserInput(messagingEvent.message.text)) {
           sendTextMessage(messagingEvent.sender.id, 'Memeriksa paket anda')
         } else {
-          sendTextMessage(messagingEvent.sender.id, 'Format salah')
+          sendTextMessage(messagingEvent.sender.id, 'Silahkan masukkan paket anda dengan format: jne_<no resi>')
         }
       })
     })
