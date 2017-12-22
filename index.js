@@ -44,13 +44,20 @@ function verifyRequestSignature (req, res, buf) {
 function getPacketStatus (userInput) {
   const courrier = userInput.substring(0, 3)
   const trackNo = userInput.substring(4)
+
+  console.log(`courrier: ${courrier}, trackNo: ${courrier}`)
+
   Aftership.call('GET', `/trackings/${courrier}/${trackNo}`, function (err, result) {
     if (err) {
+      console.log('err from aftership: ', err);
       return err
     } else if (result.data.tracking === undefined) {
-
+      console.log('result.meta.message: ', result.meta.message)
+      return result.meta.message
     } else {
       const lastCheckpoint = result.data.tracking.checkpoints[result.data.tracking.checkpoints.length - 1]
+      console.log('lastCheckpoint: ', lastCheckpoint)
+      console.log(`Tracking No: ${trackNo}\nStatus: ${lastCheckpoint.tag}\nMessage: ${lastCheckpoint.message}`)
       return `Tracking No: ${trackNo}\nStatus: ${lastCheckpoint.tag}\nMessage: ${lastCheckpoint.message}`
     }
   })
@@ -60,9 +67,11 @@ function sendTextMessage (sender, text, boolean) {
   let url = `https://graph.facebook.com/v2.6/${sender}?fields=first_name,last_name,profile_pic&access_token=${token}`
 
   if (boolean) {
+    console.log('going to getPacketStatus... with text: ', text)
     text = getPacketStatus(text)
   }
 
+  console.log('text: ', text)
   request(url, function (error, response, body) {
     if (!error && response.statusCode === 200) {
       let parseData = JSON.parse(body)
@@ -105,7 +114,7 @@ app.post('/webhook/', function (req, res) {
       pageEntry.messaging.forEach(function (messagingEvent) {
         console.log(messagingEvent)
         if (checkUserInput(messagingEvent.message.text)) {
-          sendTextMessage(messagingEvent.sender.id, 'Memeriksa paket anda', true)
+          sendTextMessage(messagingEvent.sender.id, messagingEvent.message.text, true)
         } else {
           sendTextMessage(messagingEvent.sender.id, 'Silahkan masukkan paket anda dengan format: jne_<no resi>\nContoh: jne_1234567890', false)
         }
