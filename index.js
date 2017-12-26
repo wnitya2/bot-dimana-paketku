@@ -7,6 +7,7 @@ const app = express()
 const token = 'EAAEWs25cLwoBADsVDl5a5D0SWvkdgAfupZCxSRP4VjMZBlDZCDGhkzDunPuSWmKPZA49LqkspZAtOdUNRmkho7Vy2ycEjBRLr4ZASf2zlKb3ZAYJgBbZAw7eBnZCoGtUJ6ZAJHIPcTgoc87mHZB8dTizp4CRMqt1FHH9eZCiZBijvbKYNyQZDZD'
 const crypto = require('crypto')
 const AppSecret = 'APP_YOUR_SECRET'
+const momentTz = require('moment-timezone')
 // const Aftership = require('aftership')(process.env.AFKUNCI)
 const Aftership = require('aftership')('26fc173a-725e-4fab-9193-4da0f160403d')
 
@@ -42,60 +43,57 @@ function verifyRequestSignature (req, res, buf) {
 }
 
 function getPacketStatus (userInput, cb) {
-  console.log('userInput: ', userInput)
-  console.log('userInput.length: ', userInput.length)
-  const courrier = userInput.substring(0, 3)
-  const trackNo = userInput.substring(4, userInput.length)
-
-  // const query = {
-  //   slug: courrier,
-  //   tracking_number: trackNo
-  // }
+  const userInputArr = userInput.split('_')
+  const courrier = userInputArr[0]
+  const trackNo = userInputArr[1]
 
   console.log(`courrier: ${courrier}, trackNo: ${trackNo}`)
 
   Aftership.call('GET', `/trackings/${courrier}/${trackNo}`, function (err, result) {
     if (err) {
       console.log('err.message: ', err.message)
-      return cb(err.message)
+      return cb(unescape('Maaf, nomer resi tidak tersedia \uD83D\uDE2D'))
     } else {
-      console.log('result.data: ', result.data)
-
-      const checkpoints = result.data.trackings.checkpoints
-      console.log('checkpoints: ', checkpoints)
-
+      const checkpoints = result.data.tracking.checkpoints
       const lastCheckpoint = checkpoints[checkpoints.length - 1]
       console.log('lastCheckpoint::::: ', lastCheckpoint)
 
-      return cb(null, `Tracking No: ${trackNo}\nStatus: ${lastCheckpoint.tag}\nMessage: ${lastCheckpoint.message}`)
+      let extra
+      if (lastCheckpoint.tag.toLowerCase().indexOf('deliver') >= 0 || lastCheckpoint.tag.toLowerCase().indexOf('complete') >= 0) {
+        extra = unescape('Wah senangnya paketnya sudah sampai!! Horeee \uD83D\uDE06')
+      } else {
+        extra = unescape('Sabar yaa.. paketnya masih di jalan \uD83D\uDE09')
+      }
+      return cb(null, `Tracking No: ${trackNo}` +
+        `\nTime: ${formatDate(lastCheckpoint.checkpoint_time)}` +
+        `\nStatus: ${lastCheckpoint.tag}` +
+        `\nMessage: ${lastCheckpoint.message}\n\n${extra}`)
     }
   })
 }
 
 function sendTextMessage (sender, text, boolean) {
   let url = `https://graph.facebook.com/v2.6/${sender}?fields=first_name,last_name,profile_pic&access_token=${token}`
+  let messageData = {
+    text
+  }
 
   if (boolean) {
     console.log('going to getPacketStatus... with text: ', text)
     getPacketStatus(text, (err, result) => {
       if (err) {
-        const messageData = {
+        messageData = {
           text: err
         }
-        console.log('text to be displayed: ', messageData)
-        postToFb(url, sender, messageData)
       } else {
-        const messageData = {
+        messageData = {
           text: result
         }
-        console.log('text to be displayed: ', messageData)
-        postToFb(url, sender, messageData)
       }
+      console.log('text to be displayed: ', messageData)
+      postToFb(url, sender, messageData)
     })
   } else {
-    const messageData = {
-      text
-    }
     console.log('text to be displayed: ', messageData)
     postToFb(url, sender, messageData)
   }
@@ -134,6 +132,10 @@ function checkUserInput (str) {
   return pattern.test(str)
 }
 
+function formatDate (dateString) {
+  return `${momentTz(dateString).tz('Asia/Bangkok').format('D MMM YYYY hh:mm A (Z)')}`
+}
+
 app.post('/webhook/', function (req, res) {
   let data = req.body
   if (data.object === 'page') {
@@ -143,7 +145,17 @@ app.post('/webhook/', function (req, res) {
         if (checkUserInput(messagingEvent.message.text)) {
           sendTextMessage(messagingEvent.sender.id, messagingEvent.message.text, true)
         } else {
-          sendTextMessage(messagingEvent.sender.id, 'Silahkan masukkan paket anda dengan format: jne_<no resi>\nContoh: jne_1234567890', false)
+          unescape()
+          sendTextMessage(messagingEvent.sender.id, unescape('Halo! Berikut daftar kurir yang bisa dilacak:' +
+          '\n\uD83D\uDE9A JNE' +
+          '\n\uD83D\uDE9A TIKI' +
+          '\n\uD83D\uDE9A POS INDONESIA' +
+          '\nMasukkan nomer resi paket dengan format:' +
+          '\n[kurir]_[no resi]' +
+          '\n\n\u2139 Contoh:' +
+          '\n\u2714 jne_1234567890' +
+          '\n\u2714 tiki_1234567890' +
+          '\n\u2714 pos_1234567890'), false)
         }
       })
     })
