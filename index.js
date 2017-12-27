@@ -68,8 +68,8 @@ function crudTracking (userInput, cb) {
 
       setTimeout(() => {
         getTrackingStatus(slug, tracking_number, (errGet, resultGet) => {
+          removeTracking(slug, tracking_number) // one time creation of trackings
           if (errGet) {
-            removeTracking(slug, tracking_number)
             return cb(errGet)
           } else {
             return cb(resultGet)
