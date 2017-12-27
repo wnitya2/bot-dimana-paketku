@@ -42,17 +42,62 @@ function verifyRequestSignature (req, res, buf) {
   }
 }
 
-function getPacketStatus (userInput, cb) {
+function crudTracking (userInput, cb) {
   const userInputArr = userInput.split('_')
-  const courrier = userInputArr[0]
-  const trackNo = userInputArr[1]
+  let slug = userInputArr[0]
+  if (userInputArr[0] === 'pos') {
+    slug = 'pos-indonesia'
+  }
+  const tracking_number = userInputArr[1]
+  console.log(`slug: ${slug}, tracking_number: ${tracking_number}`)
 
-  console.log(`courrier: ${courrier}, trackNo: ${trackNo}`)
+  const body = {
+    tracking: {
+      slug,
+      tracking_number
+    }
+  }
 
-  Aftership.call('GET', `/trackings/${courrier}/${trackNo}`, function (err, result) {
+  Aftership.call('POST', '/trackings', { body }, function (err, result) {
+    if (err && err.code === 4005) {
+      console.log('err when add new tracking: ', err)
+      return cb(unescape('\u274C Resi yang diinput tidak valid \uD83E\uDD14'))
+    } else {
+      console.log(`successfully add tracking: ${result}`)
+      console.log(`going to call getTrackingStatus`)
+
+      setTimeout(() => {
+        getTrackingStatus(slug, tracking_number, (errGet, resultGet) => {
+          if (errGet) {
+            removeTracking(slug, tracking_number)
+            return cb(errGet)
+          } else {
+            return cb(resultGet)
+          }
+        })
+      }, 5000)
+    }
+  })
+}
+
+function removeTracking (slug, tracking_number, cb) {
+  Aftership.call('DELETE', `/trackings/${slug}/${tracking_number}`, function (err, result) {
+    if (err) {
+      console.log(`err when remove tracking for slug: ${slug}, tracking_number: ${tracking_number}`)
+    } else {
+      console.log(`sucessfully remove tracking: ${JSON.stringify(result)}`)
+    }
+  })
+}
+
+function getTrackingStatus (slug, tracking_number, cb) {
+  Aftership.call('GET', `/trackings/${slug}/${tracking_number}`, function (err, result) {
     if (err) {
       console.log('err.message: ', err.message)
-      return cb(unescape('Maaf, nomer resi tidak tersedia \uD83D\uDE2D'))
+      return cb(unescape('\u274C Maaf, tracking tidak tersedia untuk record ini \uD83D\uDE2D'))
+    } else if (result.data.tracking.checkpoints.length === 0) {
+      console.log(`result.data.tracking.checkpoints.length: ${result.data.tracking.checkpoints.length}`)
+      return cb(unescape('\u274C Maaf, tracking tidak tersedia untuk record ini \uD83D\uDE2D'))
     } else {
       const checkpoints = result.data.tracking.checkpoints
       const lastCheckpoint = checkpoints[checkpoints.length - 1]
@@ -64,7 +109,7 @@ function getPacketStatus (userInput, cb) {
       } else {
         extra = unescape('Sabar yaa.. paketnya masih di jalan \uD83D\uDE09')
       }
-      return cb(null, `Tracking No: ${trackNo}` +
+      return cb(null, `Tracking No: ${tracking_number}` +
         `\nTime: ${formatDate(lastCheckpoint.checkpoint_time)}` +
         `\nStatus: ${lastCheckpoint.tag}` +
         `\nMessage: ${lastCheckpoint.message}\n\n${extra}`)
@@ -79,8 +124,8 @@ function sendTextMessage (sender, text, boolean) {
   }
 
   if (boolean) {
-    console.log('going to getPacketStatus... with text: ', text)
-    getPacketStatus(text, (err, result) => {
+    console.log('going to crudTracking... with text: ', text)
+    crudTracking(text, (err, result) => {
       if (err) {
         messageData = {
           text: err
@@ -128,8 +173,17 @@ function postToFb (url, sender, messageData) {
 
 function checkUserInput (str) {
   // jne_1234567890
-  const pattern = /^jne_\w*?$/i
-  return pattern.test(str)
+  // tiki_1234567890
+  // pos_1234567890
+  const strArr = str.trim().split('_')
+  const courier = strArr[0]
+
+  if (courier.toLowerCase() === 'jne' || courier.toLowerCase() === 'tiki' || courier.toLowerCase() === 'pos') {
+    return true
+  }
+
+  console.log('checkUserInput false')
+  return false
 }
 
 function formatDate (dateString) {
